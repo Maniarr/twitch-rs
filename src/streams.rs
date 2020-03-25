@@ -19,21 +19,47 @@ pub struct HelixStream {
 
 impl super::traits::HelixModel for HelixStream {}
 
-pub async fn get_from_games(twitch_api: &TwitchApi, game_ids: &Vec<String>, first: i32, after: Option<String>, before: Option<String>) -> Result<HelixPaginatedResponse<HelixStream>> {
-    let mut data: Vec<(&str, String)> = vec![
-        ("first", first.to_string())
-    ];
+#[derive(Debug)]
+pub struct StreamFilters {
+    pub after: Option<String>,
+    pub before: Option<String>,
+    pub first: Option<u64>,
+    pub game_ids: Vec<String>,
+    pub languages: Vec<String>,
+    pub user_ids: Vec<String>,
+    pub user_logins: Vec<String>,
 
-    for game_id in game_ids {
-        data.push(("game_id", String::from(game_id)));
-    }
+}
 
-    if let Some(value) = after {
+pub async fn get(twitch_api: &TwitchApi, filters: StreamFilters) -> Result<HelixPaginatedResponse<HelixStream>> {
+    let mut data: Vec<(&str, String)> = vec![];
+
+    if let Some(value) = filters.after {
         data.push(("after", value));
     }
 
-    if let Some(value) = before {
+    if let Some(value) = filters.before {
         data.push(("before", value));
+    }
+
+    if let Some(value) = filters.first {
+        data.push(("first", value.to_string()));
+    }
+
+    for game_id in filters.game_ids {
+        data.push(("game_id", game_id));
+    }
+
+    for language in filters.languages {
+        data.push(("language", language));
+    }
+
+    for user_id in filters.user_ids {
+        data.push(("user_id", user_id));
+    }
+
+    for user_login in filters.user_logins {
+        data.push(("user_login", user_login));
     }
 
     Ok(
@@ -45,31 +71,3 @@ pub async fn get_from_games(twitch_api: &TwitchApi, game_ids: &Vec<String>, firs
         )?
     )
 }
-
-pub async fn get_from_users(twitch_api: &TwitchApi, user_ids: &Vec<String>, first: i32, after: Option<String>, before: Option<String>) -> Result<HelixPaginatedResponse<HelixStream>> {
-    let mut data: Vec<(&str, String)> = vec![
-        ("first", first.to_string())
-    ];
-
-    for user_id in user_ids {
-        data.push(("user_id", String::from(user_id)));
-    }
-
-    if let Some(value) = after {
-        data.push(("after", value));
-    }
-
-    if let Some(value) = before {
-        data.push(("before", value));
-    }
-
-    Ok(
-        serde_json::from_str(
-            &twitch_api.get(String::from("https://api.twitch.tv/helix/streams"), &data)
-                .await?
-                .text()
-                .await?[..]
-        )?
-    )
-}
-

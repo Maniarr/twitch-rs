@@ -22,5 +22,5 @@ pub struct HelixPaginatedResponseWithTotal<T: HelixModel> {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HelixPagination {
-    pub cursor: String
+    pub cursor: Option<String>
 }
